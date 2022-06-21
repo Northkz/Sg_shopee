@@ -111,6 +111,13 @@ def scrape_product():
             for join_num in joined:
                 print(f"shop join->{join_num.text}")
                 shop_joined.append(join_num.text)
+        #prduct decsription
+        descriprion = product_driver.find_elements(by=By.CLASS_NAME, value="hrQhmh")
+        if not descriprion:
+            shop_joined.append('N/a')
+        else:
+            for desc in descriprion:
+                product_description.append(desc.text)
 
     except NoSuchElementException:
         rating_score.append('No Rating Score On This Product')
@@ -124,6 +131,7 @@ def scrape_product():
         shop_joined.append('No Joined Date On This Product')
 
 ## Lists ##
+product_description = []
 retail_name = []
 retail_price = []
 Quantity_Sold = []
@@ -351,7 +359,8 @@ df_shopee = pd.DataFrame(
         "Product_Score": rating_score,
         "Product_Rating_Counts": rating_count,
         "Product_Favourite_Counts_by_User": fav_count,
-        "Links": links
+        "Links": links,
+        "Description": product_description
     }
 )
 df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
