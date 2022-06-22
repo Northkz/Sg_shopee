@@ -9,20 +9,175 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
-## Search Page Scraping ##
-def scrape_page():
-    # Name
+## Lists ##
+product_description = []
+retail_name = []
+retail_price = []
+Quantity_Sold = []
+links = []
+rating_score = []
+rating_count = []
+fav_count = []
+seller_name = []
+shop_rating = []
+shop_responserate = []
+shop_responsetime = []
+product_comments = []
+shop_follower = []
+shop_joined = []
+image1_url = []
+image2_url = []
+image3_url = []
+image4_url = []
+image5_url = []
+available_item = []
+brand_name = []
+
+
+# rating score
+def rating_score():
+    Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[1]/div[1]")
+    for score in Rate:
+        if score.text:
+            rating_score.append(score.text)
+        else:
+            rating_score.append('No score')
+
+
+def rating_number_count():
+    rating_c = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[2]/div[1]")
+    for rates in rating_c:
+        rating_count.append(rates.text)
+
+
+# favourite counts
+def favorite_number():
+    favorite1 = product_driver.find_elements(by=By.XPATH, value="//button[@class='YmlR4M']")
+    for favor in favorite1:
+        if favor.text == "" or favor.text == "Favorite" or favor.text == "Favorite (0)":
+            fav_count.append("0")
+        elif not favor.text:
+            fav_count.append("N/a")
+        else:
+            fav_count.append(favor.text)
+
+
+# shop name
+def shop_name():
+    sname = product_driver.find_elements(by=By.CLASS_NAME, value="_6HeM6T")
+    for name in sname:
+        seller_name.append(name.text)
+
+
+# shop rating
+def shop_rating_check():
+    srating = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[1]/div[1]/span")
+    for rate in srating:
+        shop_rating.append(rate.text)
+
+
+# shop's response rate
+def shop_response_rate():
+    sresponse = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[2]/div[1]/span")
+    for responses in sresponse:
+        shop_responserate.append(responses.text)
+
+
+# shop's response time
+def shop_response_time():
+    srestime = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[2]/div[2]/span")
+    for rtime in srestime:
+        shop_responsetime.append(rtime.text)
+
+
+# shop followers
+def shop_follower_number():
+    followers = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[3]/div[2]/span")
+    for follower in followers:
+        shop_follower.append(follower.text)
+
+
+# shop joined
+def shop_joined_date():
+    joined = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[3]/div[1]/span")
+    for join_num in joined:
+        shop_joined.append(join_num.text)
+
+
+# product description
+def product_long_description():
+    description = product_driver.find_elements(by=By.CLASS_NAME, value="hrQhmh")
+    for desc in description:
+        product_description.append(desc.text)
+
+
+def product_specification():
+    brand_name = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[3]/div[1]/span")
+    for join_num in joined:
+        shop_joined.append(join_num.text)
+
+
+# product images from product page
+def product_images():
+    image_list = []
+    url_list = []
+    image_elements = product_driver.find_elements(by=By.XPATH, value="//div[@class='hGIHhp']/div")
+    image_num = len(image_elements)
+    for index in range(image_num):
+        if image_num > 1:
+            image = product_driver.find_elements(by=By.XPATH,
+                                                 value=f"//div[@class='hGIHhp']/div[{i + 1}]/div/div/div")
+        elif image_num == 1:
+            image = product_driver.find_elements(by=By.XPATH,
+                                                 value=f"//div[@class='hGIHhp']/div/div/div/div")
+        image_style_url = image[0].get_attribute("style")
+        image_list.append(image_style_url)
+
+    for index in range(image_num):
+        starting_index = image_list[index].find('url("')
+        end_index = image_list[index].find('")')
+        url_list.append(image_list[index][(starting_index + 5):end_index])
+
+    if image_num >= 1:
+        image1_url.append(url_list[0])
+    else:
+        image1_url.append("N/a")
+    if image_num >= 2:
+        image2_url.append(url_list[1])
+    else:
+        image2_url.append("N/a")
+    if image_num >= 3:
+        image3_url.append(url_list[2])
+    else:
+        image3_url.append("N/a")
+    if image_num >= 4:
+        image4_url.append(url_list[3])
+    else:
+        image4_url.append("N/a")
+    if image_num == 5:
+        image5_url.append(url_list[4])
+    else:
+        image5_url.append("N/a")
+
+
+# available item's number
+def stock():
+    available = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex items-center G2C2rT']/div[2]")
+    for number in available:
+        available_item.append(number.text)
+
+
+# Search Page Scraping
+def scrape_page(driver):
+    # Name of the product
     shop_name = driver.find_elements(by=By.XPATH, value="//div[@class='dpiR4u']/div[1]/div[1]")
     for name in shop_name:
         retail_name.append(name.text)
-
 
     # market lowest possible price
     price = driver.find_elements(by=By.XPATH, value="//div[@class='vioxXd rVLWG6']/span[2]")
     for prices in price:
         retail_price.append(prices.text)
-
-
 
     # Quantity Sold
     sold = driver.find_elements(by=By.CLASS_NAME, value="r6HknA")
@@ -41,83 +196,21 @@ def scrape_page():
     time.sleep(2)
 
 
-## Product Characteristics Scraping ##
-def scrape_product():
+# Product Characteristics Scraping
+def scrape_product_page():
     try:
-        # rating score
-        Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[1]/div[1]")
-        if not Rate:
-            rating_score.append('No score')
-        else:
-            for score in Rate:
-                if score.text:
-                    rating_score.append(score.text)
-                else:
-                    rating_score.append('No score')
-
-        # rating counts
-        rating_c = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[2]/div[1]")
-        for rates in rating_c:
-            rating_count.append(rates.text)
-
-        # favourite counts
-        favorite1 = product_driver.find_elements(by=By.XPATH, value="//div[@class='YmlR4M']/div[1]")
-        if not favorite1:
-            fav_count.append("N/a")
-        else:
-            for favor in favorite1:
-                print(f"favor ->{favor.text}")
-                if(favor.text == "" or favor.text == "Favorite" or favor.text == "Favorite (0)"):
-                    fav_count.append("0")
-                elif not favor.text:
-                    fav_count.append("N/a")
-                else:
-                    fav_count.append(favor.text)
-
-
-
-        sname = product_driver.find_elements(by=By.CLASS_NAME, value="_6HeM6T")
-        for name in sname:
-            seller_name.append(name.text)
-
-        # shop rating
-        srating = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[1]/div[1]/span")
-        for rate in srating:
-            shop_rating.append(rate.text)
-
-        # shop responserate
-        sresponse = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[2]/div[1]/span")
-        for responses in sresponse:
-            shop_responserate.append(responses.text)
-
-        # shop responsetime
-        srestime = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[2]/div[2]/span")
-        for rtime in srestime:
-            shop_responsetime.append(rtime.text)
-
-        # shop followers
-        followers = product_driver.find_elements(by=By.XPATH, value="/div[@class='JfALJ- page-product__shop']/div[2]/div[3]/div[2]/span[@class=_32ZDbL]")
-        if not followers:
-            shop_follower.append("N/a")
-        else:
-            for follower in followers:
-                print(f"follower->{follower.text}")
-                shop_follower.append(follower.text)
-        #shop joined
-        joined = product_driver.find_elements(by=By.XPATH, value="/div[@class='JfALJ- page-product__shop']/div[2]/div[3]/div[1]/span[@class=_32ZDbL]")
-        if not joined:
-            shop_joined.append('N/a')
-        else:
-            for join_num in joined:
-                print(f"shop join->{join_num.text}")
-                shop_joined.append(join_num.text)
-        #prduct decsription
-        descriprion = product_driver.find_elements(by=By.CLASS_NAME, value="hrQhmh")
-        if not descriprion:
-            shop_joined.append('N/a')
-        else:
-            for desc in descriprion:
-                product_description.append(desc.text)
+        rating_score()  # scrap product rating score
+        rating_number_count()  # scrap number of product rating
+        favorite_number()  # scrap number of "Favorite"
+        shop_name()  # scrap shop name
+        shop_rating_check()  # scrap shop rating
+        shop_response_rate()  # scrap shop's response rate
+        shop_response_time()  # scrap shop's response time
+        shop_follower_number()  # scrap followers number of the shop
+        shop_joined_date()  # scrap shop's joining date
+        product_long_description()  # scrap long description of the product
+        product_images()  # scrap images of the product
+        stock()  # available items number
 
     except NoSuchElementException:
         rating_score.append('No Rating Score On This Product')
@@ -130,237 +223,204 @@ def scrape_product():
         shop_follower.append('No Shop Followes On This Product')
         shop_joined.append('No Joined Date On This Product')
 
-## Lists ##
-product_description = []
-retail_name = []
-retail_price = []
-Quantity_Sold = []
-links = []
-rating_score = []
-rating_count = []
-fav_count = []
-seller_name = []
-shop_rating = []
-shop_responserate = []
-shop_responsetime = []
-product_comments = []
-shop_follower = []
-shop_joined = []
-
-## Part 1: Scrape Search Engine Webpage ##
-
-# type in product name
-inp ="sssss"
-shopee_find = inp
-
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-driver.get('https://shopee.sg/search?keyword=' + str(shopee_find))
-
-time.sleep(3)
 
 
-# Find total pages number
-num_pages = driver.find_elements(by=By.CLASS_NAME, value="shopee-mini-page-controller__total")
-print(num_pages)
-num_page = 0
-for value in num_pages:
-    num_page = int(value.text)
-print(num_page)
-# Automate Webpages
-for page in range(num_page):
-    driver.get('https://shopee.sg/search?keyword=' + str(shopee_find) + '&page=' + str(page))
-    # Sleep
-    time.sleep(1)
+# Part 1: Scrape Search Engine Webpage #
+# find products related to the "pet supplements"
+def search_product():
+    shopee_find = "nnnnn"
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    driver.get('https://shopee.sg/search?keyword=' + str(shopee_find))
+    time.sleep(3)
 
-    # Scrolling web
-    scroll_pause_time = 1
-    while True:
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
-        time.sleep(scroll_pause_time)
-        new_height = driver.execute_script('return document.body.scrollHeight')
+    # Find total pages number
+    num_pages = driver.find_elements(by=By.CLASS_NAME, value="shopee-mini-page-controller__total")
+    num_page = 0
+    for value in num_pages:
+        num_page = int(value.text)
 
-        if new_height == last_height:
-            driver.execute_script('window.scrollTo(0, window.scrollY + 500)')
+    # Automate Webpages
+    for page in range(num_page):
+        driver.get('https://shopee.sg/search?keyword=' + str(shopee_find) + '&page=' + str(page))
+        time.sleep(1)
+
+        # Scrolling web
+        scroll_pause_time = 1
+        while True:
+            last_height = driver.execute_script("return document.body.scrollHeight")
+            driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
             time.sleep(scroll_pause_time)
             new_height = driver.execute_script('return document.body.scrollHeight')
-            if new_height == last_height:
-                break
-            else:
-                last_height = new_height
-                continue
-
-    scrape_page()
-driver.close()
-
-## Part 2: Scrape Product Characteristics ##
-product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-# Automate Product Links
-for i in range(len(links)):
-    product_driver.get(links[i])
-
-    time.sleep(2)
-
-    try:
-        time.sleep(3)
-        # Scoll html
-        pause_time = 2
-        while True:
-
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
 
             if new_height == last_height:
+                driver.execute_script('window.scrollTo(0, window.scrollY + 500)')
+                time.sleep(scroll_pause_time)
+                new_height = driver.execute_script('return document.body.scrollHeight')
+                if new_height == last_height:
+                    break
+                else:
+                    last_height = new_height
+                    continue
+        scrape_page(driver)
+    driver.close()
+
+if __name__ == "__main__":
+    #search in shopee.sg
+    search_product()
+    ## Part 2: Scrape Product Characteristics ##
+    product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    # Automate Product Links
+    for i in range(len(links)):
+        product_driver.get(links[i])
+        time.sleep(2)
+        try:
+            time.sleep(3)
+            # Scoll html
+            pause_time = 2
+            while True:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
                 time.sleep(pause_time)
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
 
-        while True:
-
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
-
-            if new_height == last_height:
+            while True:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
                 time.sleep(pause_time)
+
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
 
-        while True:
+            while True:
 
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
-
-            if new_height == last_height:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
                 time.sleep(pause_time)
+
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
+            scrape_product_page()
+        except NoSuchElementException:
+            # wait for web to load after press button
+            time.sleep(3)
 
-        scrape_product()
-
-    except NoSuchElementException:
-
-        # wait for web to load after press button
-        time.sleep(3)
-
-        # Scoll html
-        pause_time = 2
-        while True:
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
-
-            if new_height == last_height:
+            # Scroll html
+            pause_time = 2
+            while True:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
                 time.sleep(pause_time)
+
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
-        while True:
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
-
-            if new_height == last_height:
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
+            while True:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
                 time.sleep(pause_time)
+
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
 
-        while True:
-            # Get the height of page
-            last_height = product_driver.execute_script("return document.body.scrollHeight")
-            product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
-            time.sleep(pause_time)
-
-            # Calculate new height
-            new_height = product_driver.execute_script('return document.body.scrollHeight')
-
-            if new_height == last_height:
+            while True:
+                # Get the height of page
+                last_height = product_driver.execute_script("return document.body.scrollHeight")
                 product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
                 time.sleep(pause_time)
+
+                # Calculate new height
                 new_height = product_driver.execute_script('return document.body.scrollHeight')
+
                 if new_height == last_height:
-                    break
-                else:
-                    last_height = new_height
-                    continue
+                    product_driver.execute_script('window.scrollTo(0, window.scrollY + 750);')
+                    time.sleep(pause_time)
+                    new_height = product_driver.execute_script('return document.body.scrollHeight')
+                    if new_height == last_height:
+                        break
+                    else:
+                        last_height = new_height
+                        continue
+            scrape_product_page()
+    product_driver.close()
 
-        scrape_product()
-product_driver.close()
-
-## Part 3: Saving ##
-
-## Create .csv file ##
-print(f"shop_name = {len(seller_name)}; shop_rating = {len(shop_rating)} ")
-print(f"Shop_Followers = {len(shop_follower)} ")
-print(f"shop_responserate = {len(shop_responserate)}; shop_responsetime = {len(shop_responsetime)} ")
-print(f"shop_joined = {len(shop_joined)}; retail_name = {len(retail_name)} ")
-print(f"retail_price = {len(retail_price)}; Quantity_Sold = {len(Quantity_Sold)} ")
-print(f"rating_score = {len(rating_score)}; rating_count = {len(rating_count)} ")
-print(f"fav_count = {len(fav_count)}; links = {len(links)} ")
-
-
-df_shopee = pd.DataFrame(
-    {
-        "Shop_Name": seller_name,
-        "Shop_Rating_Counts": shop_rating,
-        "Shop_Followers": shop_follower,
-        "Shop_Response_Rate": shop_responserate,
-        "Shop_Response_time": shop_responsetime,
-        "Shop_Joined": shop_joined,
-        "Product_Name": retail_name,
-        "Product_Price": retail_price,
-        "Quantity_Sold": Quantity_Sold,
-        "Product_Score": rating_score,
-        "Product_Rating_Counts": rating_count,
-        "Product_Favourite_Counts_by_User": fav_count,
-        "Links": links,
-        "Description": product_description
-    }
-)
-df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
+    ## Create .csv file ##
+    df_shopee = pd.DataFrame(
+        {
+            "Shop_Name": seller_name,
+            "Shop_Rating_Counts": shop_rating,
+            "Shop_Followers": shop_follower,
+            "Shop_Response_Rate": shop_responserate,
+            "Shop_Response_time": shop_responsetime,
+            "Shop_Joined": shop_joined,
+            "Product_Name": retail_name,
+            "Product_Price": retail_price,
+            "Quantity_Sold": Quantity_Sold,
+            "Available number of item": available_item,
+            "Product_Score": rating_score,
+            "Product_Rating_Counts": rating_count,
+            "Product_Favourite_Counts_by_User": fav_count,
+            "Links": links,
+            "Description": product_description,
+            "Image-1 URL": image1_url,
+            "Image-2 URL": image2_url,
+            "Image-3 URL": image3_url,
+            "Image-4 URL": image4_url,
+            "Image-5 URL": image5_url
+        }
+    )
+    df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
