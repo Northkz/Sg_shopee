@@ -1,15 +1,12 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
+from selenium.common.exceptions import NoSuchElementException
 import time, re, math
 import pandas as pd
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
-## Lists ##
+# Lists #
 product_description = []
 retail_name = []
 retail_price = []
@@ -25,6 +22,7 @@ shop_responsetime = []
 product_comments = []
 shop_follower = []
 shop_joined = []
+product_all_images = []
 image1_url = []
 image2_url = []
 image3_url = []
@@ -111,12 +109,6 @@ def product_long_description():
         product_description.append(desc.text)
 
 
-def product_specification():
-    brand_name = product_driver.find_elements(by=By.XPATH, value="//div[@class='biYJq8']/div[3]/div[1]/span")
-    for join_num in joined:
-        shop_joined.append(join_num.text)
-
-
 # product images from product page
 def product_images():
     image_list = []
@@ -138,26 +130,10 @@ def product_images():
         end_index = image_list[index].find('")')
         url_list.append(image_list[index][(starting_index + 5):end_index])
 
-    if image_num >= 1:
-        image1_url.append(url_list[0])
+    if url_list:
+        product_all_images.append(url_list)
     else:
-        image1_url.append("N/a")
-    if image_num >= 2:
-        image2_url.append(url_list[1])
-    else:
-        image2_url.append("N/a")
-    if image_num >= 3:
-        image3_url.append(url_list[2])
-    else:
-        image3_url.append("N/a")
-    if image_num >= 4:
-        image4_url.append(url_list[3])
-    else:
-        image4_url.append("N/a")
-    if image_num == 5:
-        image5_url.append(url_list[4])
-    else:
-        image5_url.append("N/a")
+        product_all_images.append("N/a")
 
 
 # available item's number
@@ -264,10 +240,11 @@ def search_product():
         scrape_page(driver)
     driver.close()
 
+
 if __name__ == "__main__":
-    #search in shopee.sg
+    # search in shopee.sg
     search_product()
-    ## Part 2: Scrape Product Characteristics ##
+    # Part 2: Scrape Product Characteristics ##
     product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     # Automate Product Links
     for i in range(len(links)):
@@ -275,6 +252,7 @@ if __name__ == "__main__":
         time.sleep(2)
         try:
             time.sleep(3)
+
             # Scoll html
             pause_time = 2
             while True:
@@ -416,11 +394,7 @@ if __name__ == "__main__":
             "Product_Favourite_Counts_by_User": fav_count,
             "Links": links,
             "Description": product_description,
-            "Image-1 URL": image1_url,
-            "Image-2 URL": image2_url,
-            "Image-3 URL": image3_url,
-            "Image-4 URL": image4_url,
-            "Image-5 URL": image5_url
+            "Product Images URL": product_all_images
         }
     )
     df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
