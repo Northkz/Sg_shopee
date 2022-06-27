@@ -6,6 +6,12 @@ from selenium.webdriver.common.by import By
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
+
+count = 0
+number_of_keys = 0
+product_specif = {}
+order_dic_column = {}
+order_dic_content = {}
 # Lists #
 product_description = []
 retail_name = []
@@ -23,23 +29,22 @@ product_comments = []
 shop_follower = []
 shop_joined = []
 product_all_images = []
-image1_url = []
-image2_url = []
-image3_url = []
-image4_url = []
-image5_url = []
 available_item = []
 brand_name = []
 
 
 # rating score
-def rating_score():
-    Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[1]/div[1]")
-    for score in Rate:
-        if score.text:
-            rating_score.append(score.text)
-        else:
-            rating_score.append('No score')
+def rating_score_product():
+    Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='Bm+f5q']")
+    if Rate:
+        rating_score.append('No score')
+    else:
+        Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[1]/div[1]")
+        for score in Rate:
+            if score.text:
+                rating_score.append(score.text)
+            else:
+                rating_score.append('No score')
 
 
 def rating_number_count():
@@ -104,31 +109,32 @@ def shop_joined_date():
 
 # product description
 def product_long_description():
+    description_text = ""
     description = product_driver.find_elements(by=By.CLASS_NAME, value="hrQhmh")
-    for desc in description:
-        product_description.append(desc.text)
+    if not description:
+        product_description.append("N/a")
+    else:
+        for desc in description:
+            description_text += ("\n" + desc.text)
+        product_description.append(description_text)
 
 
 # product images from product page
 def product_images():
-    image_list = []
+    image1_url = []
     url_list = []
-    image_elements = product_driver.find_elements(by=By.XPATH, value="//div[@class='hGIHhp']/div")
-    image_num = len(image_elements)
-    for index in range(image_num):
-        if image_num > 1:
-            image = product_driver.find_elements(by=By.XPATH,
-                                                 value=f"//div[@class='hGIHhp']/div[{i + 1}]/div/div/div")
-        elif image_num == 1:
-            image = product_driver.find_elements(by=By.XPATH,
-                                                 value=f"//div[@class='hGIHhp']/div/div/div/div")
-        image_style_url = image[0].get_attribute("style")
-        image_list.append(image_style_url)
+    image = product_driver.find_elements(by=By.XPATH, value="//div[@class='hGIHhp']/div")
+    num = len(image)
+    for i in range(num):
+        test = product_driver.find_elements(by=By.XPATH, value="//div[@class='hGIHhp']/div["+str(i+1)+"]/div[1]/div[1]/div")
+        for j in test:
+            p = j.get_attribute("style")
+            image1_url.append(p)
 
-    for index in range(image_num):
-        starting_index = image_list[index].find('url("')
-        end_index = image_list[index].find('")')
-        url_list.append(image_list[index][(starting_index + 5):end_index])
+    for index in range(num):
+        starting_index = image1_url[index].find('url("')
+        end_index = image1_url[index].find('")')
+        url_list.append(image1_url[index][(starting_index + 5):end_index])
 
     if url_list:
         product_all_images.append(url_list)
@@ -139,15 +145,69 @@ def product_images():
 # available item's number
 def stock():
     available = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex items-center G2C2rT']/div[2]")
-    for number in available:
-        available_item.append(number.text)
+    if not available:
+        available_item.append("N/a")
+    else:
+        for number in available:
+            available_item.append(number.text)
+
+
+#  function to get "key" of the dictionary
+def get_key(dic, val):
+    for key, value in dic.items():
+        if val == value:
+            return key
+    return "There is no such Key"
+
+
+def product_specification():
+    # actual values
+    value_of_category = product_driver.find_elements(by=By.XPATH, value="//div[@class='product-detail page-product__detail']/div[1]/div/div/div[1]")
+    # categories of specs
+    category_name = product_driver.find_elements(by=By.XPATH,
+                                              value="//div[@class='product-detail page-product__detail']/div[1]/div/div/label")
+    # extract each individual value
+    global count, number_of_keys
+    count += 1
+
+    # creates dictionary of column names(no dubicates) with empty list as value == product_specif
+    # and dictionary of column names(no dubicates) with their order as value
+    for value in category_name:
+        variable = value.text
+        if variable in product_specif.keys():
+            continue
+        else:
+            number_of_keys += 1
+            product_specif[f"{value.text}"] = []
+            order_dic_column[f"{value.text}"] = number_of_keys
+
+    # extract each corresponding category
+    # creates dictionary of specifications with number(to which column it belongs)
+    for i in range(len(value_of_category)):
+        order_dic_content[f"{value_of_category[i].text}"] = order_dic_column[category_name[i].text]
+
+    # fills product_specif with "N/a"
+    for key in product_specif:
+        for i in range(count):
+            if len(product_specif[key]) < count:
+                product_specif[key].append("N/a")
+            else:
+                break  # ???? not sure, maye 'continue'
+
+    # replaces "N/a" to correspondent specification on correspondent index in dictionary
+    for specification in order_dic_content:
+        position_key = get_key(order_dic_column, order_dic_content[specification])
+        product_specif[position_key][count-1] = specification
+    order_dic_content.clear()
+    # test and extract
 
 
 # Search Page Scraping
 def scrape_page(driver):
+
     # Name of the product
-    shop_name = driver.find_elements(by=By.XPATH, value="//div[@class='dpiR4u']/div[1]/div[1]")
-    for name in shop_name:
+    item_name = driver.find_elements(by=By.XPATH, value="//div[@class='dpiR4u']/div[1]/div[1]")
+    for name in item_name:
         retail_name.append(name.text)
 
     # market lowest possible price
@@ -175,7 +235,7 @@ def scrape_page(driver):
 # Product Characteristics Scraping
 def scrape_product_page():
     try:
-        rating_score()  # scrap product rating score
+        rating_score_product()  # scrap product rating score
         rating_number_count()  # scrap number of product rating
         favorite_number()  # scrap number of "Favorite"
         shop_name()  # scrap shop name
@@ -187,6 +247,7 @@ def scrape_product_page():
         product_long_description()  # scrap long description of the product
         product_images()  # scrap images of the product
         stock()  # available items number
+        product_specification()  # scrap specification of the product
 
     except NoSuchElementException:
         rating_score.append('No Rating Score On This Product')
@@ -200,14 +261,13 @@ def scrape_product_page():
         shop_joined.append('No Joined Date On This Product')
 
 
-
 # Part 1: Scrape Search Engine Webpage #
 # find products related to the "pet supplements"
 def search_product():
-    shopee_find = "nnnnn"
+    shopee_find = "mmmm"
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     driver.get('https://shopee.sg/search?keyword=' + str(shopee_find))
-    time.sleep(3)
+    time.sleep(2)
 
     # Find total pages number
     num_pages = driver.find_elements(by=By.CLASS_NAME, value="shopee-mini-page-controller__total")
@@ -244,17 +304,40 @@ def search_product():
 if __name__ == "__main__":
     # search in shopee.sg
     search_product()
+    item_num = 0
+    print(f"item number {item_num}")
     # Part 2: Scrape Product Characteristics ##
     product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     # Automate Product Links
     for i in range(len(links)):
+        test1 = {
+            "Shop_Name": len(seller_name),
+            "Shop_Rating_Counts": len(shop_rating),
+            "Shop_Followers": len(shop_follower),
+            "Shop_Response_Rate": len(shop_responserate),
+            "Shop_Response_time": len(shop_responsetime),
+            "Shop_Joined": len(shop_joined),
+            "Product_Name": len(retail_name),
+            "Product_Price": len(retail_price),
+            "Quantity_Sold": len(Quantity_Sold),
+            "Available number of item": len(available_item),
+            "Product_Score": len(rating_score),
+            "Product_Rating_Counts": len(rating_count),
+            "Product_Favourite_Counts_by_User": len(fav_count),
+            "Links": len(links),
+            "Description": len(product_description),
+            "Product Images URL": len(product_all_images)
+        }
+        item_num += 1
+        print(f"left pages = {len(links) - item_num}")
+        print("\n====================\n")
+        print(pd.Series(test1))
+        print("\n====================\n")
         product_driver.get(links[i])
-        time.sleep(2)
+        time.sleep(1)
         try:
-            time.sleep(3)
-
             # Scoll html
-            pause_time = 2
+            pause_time = 1
             while True:
                 # Get the height of page
                 last_height = product_driver.execute_script("return document.body.scrollHeight")
@@ -313,11 +396,8 @@ if __name__ == "__main__":
                         continue
             scrape_product_page()
         except NoSuchElementException:
-            # wait for web to load after press button
-            time.sleep(3)
-
             # Scroll html
-            pause_time = 2
+            pause_time = 1
             while True:
                 # Get the height of page
                 last_height = product_driver.execute_script("return document.body.scrollHeight")
@@ -375,10 +455,23 @@ if __name__ == "__main__":
                         continue
             scrape_product_page()
     product_driver.close()
+    print(f"Dictionary length -> {len(product_specif)}")
+    for i in product_specif:
+        print(f"{i} = {len(product_specif[i])}")
+
+    print(f"shop_name = {len(seller_name)}; shop_rating = {len(shop_rating)} ")
+    print(f"Shop_Followers = {len(shop_follower)}, Available = {len(available_item)}")
+    print(f"shop_responserate = {len(shop_responserate)}; shop_responsetime = {len(shop_responsetime)} ")
+    print(f"shop_joined = {len(shop_joined)}; retail_name = {len(retail_name)} ")
+    print(f"retail_price = {len(retail_price)}; Quantity_Sold = {len(Quantity_Sold)} ")
+    print(f"rating_score = {len(rating_score)}; rating_count = {len(rating_count)} ")
+    print(f"fav_count = {len(fav_count)}; links = {len(links)} ")
+    print(f"Description = {len(product_description)}, Images = {len(product_all_images)}")
+    print(product_specif)
+
 
     ## Create .csv file ##
-    df_shopee = pd.DataFrame(
-        {
+    all_data_dict =  {
             "Shop_Name": seller_name,
             "Shop_Rating_Counts": shop_rating,
             "Shop_Followers": shop_follower,
@@ -396,5 +489,7 @@ if __name__ == "__main__":
             "Description": product_description,
             "Product Images URL": product_all_images
         }
-    )
+    all_data_dict.update(product_specif)
+    df_shopee = pd.DataFrame(all_data_dict)
+
     df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
