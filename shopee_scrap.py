@@ -166,6 +166,9 @@ def product_specification():
     # categories of specs
     category_name = product_driver.find_elements(by=By.XPATH,
                                               value="//div[@class='product-detail page-product__detail']/div[1]/div/div/label")
+    # if len(value_of_category) != len(category_name):
+    #     for category in category_name:
+    #
     # extract each individual value
     global count, number_of_keys
     count += 1
@@ -229,7 +232,7 @@ def scrape_page(driver):
         links.append(href.get_attribute('href'))
 
     # Sleep for new URL
-    time.sleep(2)
+    time.sleep(0.15)
 
 
 # Product Characteristics Scraping
@@ -281,7 +284,7 @@ def search_product():
         time.sleep(1)
 
         # Scrolling web
-        scroll_pause_time = 1
+        scroll_pause_time = 0.03
         while True:
             last_height = driver.execute_script("return document.body.scrollHeight")
             driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
@@ -302,6 +305,8 @@ def search_product():
 
 
 if __name__ == "__main__":
+    start_time_2 = time.time()
+
     # search in shopee.sg
     search_product()
     item_num = 0
@@ -310,6 +315,7 @@ if __name__ == "__main__":
     product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     # Automate Product Links
     for i in range(len(links)):
+        start_time = time.time()
         test1 = {
             "Shop_Name": len(seller_name),
             "Shop_Rating_Counts": len(shop_rating),
@@ -334,10 +340,9 @@ if __name__ == "__main__":
         print(pd.Series(test1))
         print("\n====================\n")
         product_driver.get(links[i])
-        time.sleep(1)
         try:
             # Scoll html
-            pause_time = 1
+            pause_time = 0
             while True:
                 # Get the height of page
                 last_height = product_driver.execute_script("return document.body.scrollHeight")
@@ -397,7 +402,7 @@ if __name__ == "__main__":
             scrape_product_page()
         except NoSuchElementException:
             # Scroll html
-            pause_time = 1
+            pause_time = 0
             while True:
                 # Get the height of page
                 last_height = product_driver.execute_script("return document.body.scrollHeight")
@@ -454,6 +459,7 @@ if __name__ == "__main__":
                         last_height = new_height
                         continue
             scrape_product_page()
+        print("--- %s seconds ---" % (time.time() - start_time))
     product_driver.close()
     print(f"Dictionary length -> {len(product_specif)}")
     for i in product_specif:
@@ -493,3 +499,4 @@ if __name__ == "__main__":
     df_shopee = pd.DataFrame(all_data_dict)
 
     df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
+    print("--- %s seconds for whole code ---" % (time.time() - start_time_2))
