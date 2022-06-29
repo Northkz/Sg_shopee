@@ -1,10 +1,8 @@
 from selenium.common.exceptions import NoSuchElementException
-import time, re, math
+import time
 import pandas as pd
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 
 
 count = 0
@@ -33,18 +31,112 @@ available_item = []
 brand_name = []
 
 
+#  --------------------------------------------------Sanity check start----------------------------------------------  #
+# getting rid of characters in columns with numbers
+def remove_char(all_products_panda):
+    sh_rate = all_products_panda['Shop_Response_Rate'].str.extract('(\d+)')
+    all_products_panda['Shop_Response_Rate'] = sh_rate
+    q_sold = all_products_panda['Quantity_Sold'].str.extract('(\d+)')
+    all_products_panda['Quantity_Sold'] = q_sold
+    avail_num = all_products_panda["Available number of item"].str.extract('(\d+)')
+    all_products_panda["Available number of item"] = avail_num
+    fav_count = all_products_panda['Product_Favourite_Counts_by_User'].str.extract('(\d+)')
+    all_products_panda['Product_Favourite_Counts_by_User'] = fav_count
+
+
+#  Correcting Shop_Response_time or replacing text to number:
+#  within minutes == 0
+#  within hours == 1
+#  within days == 2
+# others == 3
+def correct_time(all_products_panda):
+        minutes = all_products_panda['Shop_Response_time'].replace("within minutes", 0)
+        all_products_panda['Shop_Response_time'] = minutes
+        hr = all_products_panda['Shop_Response_time'].replace("within hours", 1)
+        all_products_panda['Shop_Response_time'] = hr
+        days = all_products_panda['Shop_Response_time'].replace("within days", 2)
+        all_products_panda['Shop_Response_time'] = days
+        all_products_panda['Shop_Response_time'] = pd.to_numeric(all_products_panda['Shop_Response_time'], errors='coerce').fillna(3).astype('int')
+
+
+# getting rid of 'k' in numbers like 1,8k for 'Shop_Rating_Counts' and 'Shop_Followers' columns
+def remove_k(all_products_panda):
+    result_shop_rating = []
+    for i in all_products_panda['Shop_Rating_Counts'].tolist():
+        if 'k' in i:
+            i = i.replace('k', '')
+            i = float(i)
+            i *= 1000
+            result_shop_rating.append(int(i))
+        else:
+            result_shop_rating.append(int(i))
+    all_products_panda['Shop_Rating_Counts'] = result_shop_rating
+
+    result_shop_followers = []
+    for i in all_products_panda['Shop_Followers'].tolist():
+        if 'k' in i:
+            i = i.replace('k', '')
+            i = float(i)
+            i *= 1000
+            result_shop_followers.append(int(i))
+        else:
+            result_shop_followers.append(int(i))
+    all_products_panda['Shop_Followers'] = result_shop_followers
+
+    result_product_rating = []
+    for i in all_products_panda['Product_Rating_Counts'].tolist():
+        if 'k' in i:
+            i = i.replace('k', '')
+            i = float(i)
+            i *= 1000
+            result_product_rating.append(int(i))
+        else:
+            result_product_rating.append(int(i))
+    all_products_panda['Product_Rating_Counts'] = result_product_rating
+
+
+#  Correcting Category
+def category_correcting(all_products_panda):
+    category_list = all_products_panda['Category'].tolist()
+    final_category_list = []
+    for i in category_list:
+        split_category = i.split("\n")
+        final_category_list.append(split_category)
+    all_products_panda['Category'] = final_category_list
+
+
+#  Replacing words, and storing only numbers(days)
+def correcting_joined_date(all_products_panda):
+    joined_ago = all_products_panda['Shop_Joined'].tolist()
+    processed_joined_ago_list = []
+    for i in joined_ago:
+        if 'month' in i:
+            number_in_text = [int(x) for x in i.split() if x.isdigit()]
+            processed_joined_ago_list.append(int(number_in_text[0] * 30))
+        elif "day" in i:
+            number_in_text = [int(x) for x in i.split() if x.isdigit()]
+            processed_joined_ago_list.append(int(number_in_text[0] * 30))
+        else:
+            processed_joined_ago_list.append(0)
+    all_products_panda['Shop_Joined'] = processed_joined_ago_list
+
+
+#  --------------------------------------------------Sanity check end----------------------------------------------  #
+
+
+#  --------------------------------------------------Main processes----------------------------------------------  #
 # rating score
 def rating_score_product():
     Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='Bm+f5q']")
     if Rate:
-        rating_score.append('No score')
+        rating_score.append('N/A')
     else:
         Rate = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex W2tD8-']/div[1]/div[1]")
         for score in Rate:
             if score.text:
                 rating_score.append(score.text)
             else:
-                rating_score.append('No score')
+                rating_score.append('N/A')
 
 
 def rating_number_count():
@@ -60,7 +152,7 @@ def favorite_number():
         if favor.text == "" or favor.text == "Favorite" or favor.text == "Favorite (0)":
             fav_count.append("0")
         elif not favor.text:
-            fav_count.append("N/a")
+            fav_count.append("N/A")
         else:
             fav_count.append(favor.text)
 
@@ -112,7 +204,7 @@ def product_long_description():
     description_text = ""
     description = product_driver.find_elements(by=By.CLASS_NAME, value="hrQhmh")
     if not description:
-        product_description.append("N/a")
+        product_description.append("N/A")
     else:
         for desc in description:
             description_text += ("\n" + desc.text)
@@ -139,14 +231,14 @@ def product_images():
     if url_list:
         product_all_images.append(url_list)
     else:
-        product_all_images.append("N/a")
+        product_all_images.append("N/A")
 
 
 # available item's number
 def stock():
     available = product_driver.find_elements(by=By.XPATH, value="//div[@class='flex items-center G2C2rT']/div[2]")
     if not available:
-        available_item.append("N/a")
+        available_item.append("N/A")
     else:
         for number in available:
             available_item.append(number.text)
@@ -161,20 +253,20 @@ def get_key(dic, val):
 
 
 def product_specification():
-    # actual values
-    value_of_category = product_driver.find_elements(by=By.XPATH, value="//div[@class='product-detail page-product__detail']/div[1]/div/div/div[1]")
-    # categories of specs
-    category_name = product_driver.find_elements(by=By.XPATH,
-                                              value="//div[@class='product-detail page-product__detail']/div[1]/div/div/label")
-    # if len(value_of_category) != len(category_name):
-    #     for category in category_name:
-    #
-    # extract each individual value
     global count, number_of_keys
     count += 1
+    # actual values
+    value_of_category = product_driver.find_elements(by=By.XPATH, value="//div[@class='product-detail "
+                                                                        "page-product__detail']/div[1]/div/div")
+    # categories of specs
+    category_name = product_driver.find_elements(by=By.XPATH,
+                                              value="//div[@class='product-detail page-product__detail']/div["
+                                                    "1]/div/div/label")
+    if not category_name:
+        return 0
 
-    # creates dictionary of column names(no dubicates) with empty list as value == product_specif
-    # and dictionary of column names(no dubicates) with their order as value
+    # creates dictionary of column names(no duplicates) with empty list (this dictionary will be final output)
+    # and dictionary of column names(no duplicates) with their order of appearing as value
     for value in category_name:
         variable = value.text
         if variable in product_specif.keys():
@@ -184,18 +276,23 @@ def product_specification():
             product_specif[f"{value.text}"] = []
             order_dic_column[f"{value.text}"] = number_of_keys
 
-    # extract each corresponding category
-    # creates dictionary of specifications with number(to which column it belongs)
+    # creates dictionary of product specification value with number(to which column it belongs,based on appearing order)
     for i in range(len(value_of_category)):
+        link_in_specific = value_of_category[i].find_elements(By.TAG_NAME, 'a')
+        if link_in_specific:
+            value_of_category[i] = link_in_specific[0]
+        else:
+            no_link_in_specific = value_of_category[i].find_elements(By.TAG_NAME, 'div')
+            value_of_category[i] = no_link_in_specific[0]
         order_dic_content[f"{value_of_category[i].text}"] = order_dic_column[category_name[i].text]
 
     # fills product_specif with "N/a"
     for key in product_specif:
         for i in range(count):
             if len(product_specif[key]) < count:
-                product_specif[key].append("N/a")
+                product_specif[key].append("N/A")
             else:
-                break  # ???? not sure, maye 'continue'
+                break
 
     # replaces "N/a" to correspondent specification on correspondent index in dictionary
     for specification in order_dic_content:
@@ -207,7 +304,7 @@ def product_specification():
 
 # Search Page Scraping
 def scrape_page(driver):
-
+    time.sleep(1)
     # Name of the product
     item_name = driver.find_elements(by=By.XPATH, value="//div[@class='dpiR4u']/div[1]/div[1]")
     for name in item_name:
@@ -267,10 +364,10 @@ def scrape_product_page():
 # Part 1: Scrape Search Engine Webpage #
 # find products related to the "pet supplements"
 def search_product():
-    shopee_find = "mmmm"
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    shopee_find = "kle"
+    driver = webdriver.Chrome(executable_path="/Users/north/Desktop/research/webscrap/chromedriver")
     driver.get('https://shopee.sg/search?keyword=' + str(shopee_find))
-    time.sleep(2)
+    time.sleep(3)
 
     # Find total pages number
     num_pages = driver.find_elements(by=By.CLASS_NAME, value="shopee-mini-page-controller__total")
@@ -284,7 +381,7 @@ def search_product():
         time.sleep(1)
 
         # Scrolling web
-        scroll_pause_time = 0.03
+        scroll_pause_time = 0.2
         while True:
             last_height = driver.execute_script("return document.body.scrollHeight")
             driver.execute_script('window.scrollTo(0, window.scrollY + 500);')
@@ -312,7 +409,8 @@ if __name__ == "__main__":
     item_num = 0
     print(f"item number {item_num}")
     # Part 2: Scrape Product Characteristics ##
-    product_driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+    product_driver = webdriver.Chrome(executable_path="/Users/north/Desktop/research/webscrap/chromedriver")
     # Automate Product Links
     for i in range(len(links)):
         start_time = time.time()
@@ -335,7 +433,7 @@ if __name__ == "__main__":
             "Product Images URL": len(product_all_images)
         }
         item_num += 1
-        print(f"left pages = {len(links) - item_num}")
+        print(f"left pages = {len(links) + 1 - item_num}")
         print("\n====================\n")
         print(pd.Series(test1))
         print("\n====================\n")
@@ -497,6 +595,13 @@ if __name__ == "__main__":
         }
     all_data_dict.update(product_specif)
     df_shopee = pd.DataFrame(all_data_dict)
+
+    remove_char(df_shopee)
+    correct_time(df_shopee)
+    remove_k(df_shopee)
+    category_correcting(df_shopee)
+    correcting_joined_date(df_shopee)
+
 
     df_shopee.to_csv('shopee_data.csv', index=False, encoding='utf-8')
     print("--- %s seconds for whole code ---" % (time.time() - start_time_2))
